@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <title>Document</title>
+</head>
+<body>
+    <div class="container">
+        <form id="save" class="row justify-content-center mt-5">
+            <div class="col-4">
+                <input type="text" name="name" class="form-control" placeholder="Name" required>
+            </div>
+            <div class="col-4">
+                <input type="text" type="email" name="email" class="form-control" placeholder="E-mail" required>
+            </div>
+            <div class="col-4">
+                <button type="submit" class="btn btn-primary w-100 mb-3">Save</button>
+            </div>
+        </form>
+
+        <div class="row justify-content-center mt-5">
+            <div id="loading" class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">E-mail</th>
+                    <th scope="col">Action</th>
+                </tr>
+                </thead>
+                <tbody id="usersRows"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+    <script>
+        const API = 'http://localhost:3000/api'
+
+        const hideTable = () => $("table").hide();
+        const showTable = () => $("table").show(100);
+        const showLoading = () => $("#loading").show(100)
+        const hideLoading = () => $("#loading").hide()
+
+
+        const createButton = (label) => {
+            return $("<button>").addClass('btn btn-danger').html(label)
+        }
+
+        const getUser = async () => {
+            hideTable();
+            showLoading();
+
+            const request = await fetch(`${API}/user`)
+            const data = await request.json();
+            await renderRows(data)
+
+            hideLoading();
+            showTable();
+        }
+
+        const deleteUser = async (id) => {
+            const request = await fetch(`${API}/user/${id}`, { method: 'DELETE' })
+            await getUser()
+        }
+
+        const setUser = async (event) => {
+            event.preventDefault();
+
+            const name = $('[name=name]').val();
+            const email = $('[name=email]').val();
+
+            const request = await fetch(`${API}/user`, 
+                { 
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST', 
+                    body:  JSON.stringify({ name, email })
+                })
+
+            await getUser()
+        }
+
+        const renderRows = async (users) => {
+
+            const rows = users.map(user => {
+
+                const deleteButton = createButton('Delete')
+                deleteButton.click(() => deleteUser(user._id))
+
+                return $('<tr>')
+                        .append($('<td>').append(user.name))
+                        .append($('<td>').append(user.email))
+                        .append($('<td>').append(deleteButton))
+
+                
+            })
+
+            $("#usersRows").html(rows)
+        }
+
+        $(async () => {
+            await getUser()
+            $("#save").submit(setUser)
+
+        })
+    </script>
+</body>
+</html>
